@@ -10,7 +10,7 @@ const stream = await openrouter.chat.send({
     messages: [
         {
             "role": "user",
-            "content": "What is america doing in Venezuela?"
+            "content": "What is the meaining of freedom ?"
         }
     ],
     stream: true

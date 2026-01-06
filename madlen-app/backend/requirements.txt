@@ -1,0 +1,22 @@
+# Django & REST Framework
+django>=4.2,<5.0
+djangorestframework>=3.14
+
+# HTTP Client for OpenRouter API
+requests>=2.31
+
+# Environment Variable Management
+python-dotenv>=1.0
+
+# OpenTelemetry - Core
+opentelemetry-api>=1.20
+opentelemetry-sdk>=1.20
+
+# OpenTelemetry - Django Instrumentation
+opentelemetry-instrumentation-django>=0.41b0
+
+# OpenTelemetry - OTLP Exporter (for Jaeger)
+opentelemetry-exporter-otlp>=1.20
+
+# OpenTelemetry - Additional Instrumentations (recommended)
+opentelemetry-instrumentation-requests>=0.41b0

@@ -5,20 +5,42 @@
  * and session management.
  * 
  * Features:
+ * - Collapsible sidebar
+ * - Welcome screen with suggestions
  * - Optimistic UI updates
  * - Auto-scroll to latest message
- * - Loading states
- * - Error handling
- * - Session management (new chat, switch sessions)
+ * - Session management
  */
 
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Send, Loader2, Bot, Trash2 } from 'lucide-react';
+import { Send, Loader2, Bot, Sparkles, Code, BookOpen, Lightbulb, PanelLeft } from 'lucide-react';
 import { sendMessage, fetchSessions, fetchHistory } from '../services/api';
 import MessageBubble from './MessageBubble';
 import ModelSelector from './ModelSelector';
 import Sidebar from './Sidebar';
+
+// Sample prompts for welcome screen
+const SUGGESTIONS = [
+    {
+        icon: Lightbulb,
+        title: 'Explain a concept',
+        prompt: 'Explain quantum computing in simple terms',
+        color: 'from-purple-500 to-pink-500'
+    },
+    {
+        icon: Code,
+        title: 'Write code',
+        prompt: 'Write a Python function to sort a list of numbers',
+        color: 'from-blue-500 to-cyan-500'
+    },
+    {
+        icon: BookOpen,
+        title: 'Learn something',
+        prompt: 'What are the best practices for React development?',
+        color: 'from-green-500 to-emerald-500'
+    },
+];
 
 export default function ChatInterface() {
     // State
@@ -30,6 +52,7 @@ export default function ChatInterface() {
     const [sessionId, setSessionId] = useState(() => uuidv4());
     const [sessions, setSessions] = useState([]);
     const [isLoadingSessions, setIsLoadingSessions] = useState(true);
+    const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
     // Refs
     const messagesEndRef = useRef(null);
@@ -85,15 +108,15 @@ export default function ChatInterface() {
         setIsLoading(false);
     }, [sessionId]);
 
-    const handleSend = async () => {
-        const trimmedInput = input.trim();
-        if (!trimmedInput || isSending) return;
+    const handleSend = async (messageText = null) => {
+        const textToSend = messageText || input.trim();
+        if (!textToSend || isSending) return;
 
         // Create optimistic user message
         const userMessage = {
             id: Date.now(),
             role: 'user',
-            content: trimmedInput,
+            content: textToSend,
             timestamp: new Date().toISOString(),
         };
 
@@ -107,7 +130,7 @@ export default function ChatInterface() {
 
         try {
             // Call API
-            const result = await sendMessage(trimmedInput, selectedModel, sessionId);
+            const result = await sendMessage(textToSend, selectedModel, sessionId);
 
             if (result.success) {
                 // Update session ID if server assigned a new one
@@ -142,7 +165,6 @@ export default function ChatInterface() {
                 setMessages((prev) => [...prev, errorMessage]);
             }
         } catch (error) {
-            // Unexpected error
             const errorMessage = {
                 id: Date.now() + 1,
                 role: 'error',
@@ -164,9 +186,48 @@ export default function ChatInterface() {
         }
     };
 
-    const handleClearChat = () => {
-        handleNewChat();
+    const handleSuggestionClick = (prompt) => {
+        setInput(prompt);
+        // Auto-send after a brief delay for better UX
+        setTimeout(() => handleSend(prompt), 100);
     };
+
+    // Welcome Screen Component
+    const WelcomeScreen = () => (
+        <div className="h-full flex flex-col items-center justify-center px-4">
+            <div className="text-center mb-8">
+                <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-6 shadow-lg">
+                    <Sparkles className="h-10 w-10 text-white" />
+                </div>
+                <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                    How can I help you today?
+                </h2>
+                <p className="text-gray-500">
+                    Start a conversation or try one of these suggestions
+                </p>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 max-w-3xl w-full">
+                {SUGGESTIONS.map((suggestion, index) => (
+                    <button
+                        key={index}
+                        onClick={() => handleSuggestionClick(suggestion.prompt)}
+                        className="group p-4 bg-white border border-gray-200 rounded-xl hover:border-blue-300 hover:shadow-md transition-all text-left"
+                    >
+                        <div className={`w-10 h-10 bg-gradient-to-br ${suggestion.color} rounded-lg flex items-center justify-center mb-3 group-hover:scale-110 transition-transform`}>
+                            <suggestion.icon className="h-5 w-5 text-white" />
+                        </div>
+                        <h3 className="font-medium text-gray-800 mb-1">
+                            {suggestion.title}
+                        </h3>
+                        <p className="text-sm text-gray-500 line-clamp-2">
+                            {suggestion.prompt}
+                        </p>
+                    </button>
+                ))}
+            </div>
+        </div>
+    );
 
     return (
         <div className="flex h-screen bg-gray-50">
@@ -177,15 +238,26 @@ export default function ChatInterface() {
                 onSelectSession={handleSelectSession}
                 onNewChat={handleNewChat}
                 isLoading={isLoadingSessions}
+                isOpen={isSidebarOpen}
+                onToggle={() => setIsSidebarOpen(!isSidebarOpen)}
             />
 
             {/* Main Chat Area */}
-            <div className="flex-1 flex flex-col">
+            <div className="flex-1 flex flex-col min-w-0">
                 {/* Header */}
                 <header className="bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between shadow-sm">
                     <div className="flex items-center gap-3">
+                        {!isSidebarOpen && (
+                            <button
+                                onClick={() => setIsSidebarOpen(true)}
+                                className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 rounded-lg transition-colors mr-1"
+                                title="Open sidebar"
+                            >
+                                <PanelLeft className="h-5 w-5" />
+                            </button>
+                        )}
                         <div className="bg-blue-500 p-2 rounded-lg">
-                            <Bot className="h-6 w-6 text-white" />
+                            <Bot className="h-5 w-5 text-white" />
                         </div>
                         <div>
                             <h1 className="text-lg font-semibold text-gray-800">Madlen Chat</h1>
@@ -193,59 +265,44 @@ export default function ChatInterface() {
                         </div>
                     </div>
 
-                    <div className="flex items-center gap-3">
+                    <div className="flex items-center gap-2">
                         <ModelSelector
                             selectedModel={selectedModel}
                             onSelect={setSelectedModel}
                             disabled={isSending}
                         />
-
-                        {messages.length > 0 && (
-                            <button
-                                onClick={handleClearChat}
-                                className="p-2 text-gray-500 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
-                                title="New chat"
-                            >
-                                <Trash2 className="h-5 w-5" />
-                            </button>
-                        )}
                     </div>
                 </header>
 
                 {/* Messages Area */}
-                <main className="flex-1 overflow-y-auto px-4 py-6">
+                <main className="flex-1 overflow-y-auto">
                     {isLoading ? (
                         <div className="h-full flex items-center justify-center">
                             <Loader2 className="h-8 w-8 animate-spin text-gray-400" />
                         </div>
                     ) : messages.length === 0 ? (
-                        // Empty state
-                        <div className="h-full flex flex-col items-center justify-center text-gray-400">
-                            <Bot className="h-16 w-16 mb-4 text-gray-300" />
-                            <p className="text-lg font-medium">Start a conversation</p>
-                            <p className="text-sm">Type a message below to begin chatting</p>
-                        </div>
+                        <WelcomeScreen />
                     ) : (
-                        // Messages list
-                        <div className="max-w-3xl mx-auto">
-                            {messages.map((message) => (
-                                <MessageBubble key={message.id} message={message} />
-                            ))}
+                        <div className="px-4 py-6">
+                            <div className="max-w-3xl mx-auto">
+                                {messages.map((message) => (
+                                    <MessageBubble key={message.id} message={message} />
+                                ))}
 
-                            {/* Loading indicator */}
-                            {isSending && (
-                                <div className="flex justify-start mb-4">
-                                    <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3">
-                                        <div className="flex items-center gap-2 text-gray-600">
-                                            <Loader2 className="h-4 w-4 animate-spin" />
-                                            <span className="text-sm">Thinking...</span>
+                                {/* Loading indicator */}
+                                {isSending && (
+                                    <div className="flex justify-start mb-4">
+                                        <div className="bg-gray-200 rounded-2xl rounded-bl-md px-4 py-3">
+                                            <div className="flex items-center gap-2 text-gray-600">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span className="text-sm">Thinking...</span>
+                                            </div>
                                         </div>
                                     </div>
-                                </div>
-                            )}
+                                )}
 
-                            {/* Scroll anchor */}
-                            <div ref={messagesEndRef} />
+                                <div ref={messagesEndRef} />
+                            </div>
                         </div>
                     )}
                 </main>
@@ -263,7 +320,7 @@ export default function ChatInterface() {
                                     placeholder="Type your message..."
                                     disabled={isSending}
                                     rows={1}
-                                    className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 pr-12 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
+                                    className="w-full resize-none rounded-xl border border-gray-300 px-4 py-3 text-gray-800 placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-100 disabled:cursor-not-allowed"
                                     style={{
                                         minHeight: '48px',
                                         maxHeight: '120px',
@@ -272,7 +329,7 @@ export default function ChatInterface() {
                             </div>
 
                             <button
-                                onClick={handleSend}
+                                onClick={() => handleSend()}
                                 disabled={!input.trim() || isSending}
                                 className="flex-shrink-0 bg-blue-500 text-white p-3 rounded-xl hover:bg-blue-600 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                             >
@@ -285,7 +342,7 @@ export default function ChatInterface() {
                         </div>
 
                         <p className="text-xs text-gray-400 text-center mt-2">
-                            Press Enter to send, Shift+Enter for new line
+                            Press Enter to send • Shift+Enter for new line
                         </p>
                     </div>
                 </footer>

@@ -21,7 +21,7 @@ export default function ChatInterface() {
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
-    const [selectedModel, setSelectedModel] = useState('openai/gpt-3.5-turbo');
+    const [selectedModel, setSelectedModel] = useState('meta-llama/llama-3.3-70b-instruct:free');
     const [sessionId, setSessionId] = useState(null);
 
     // Refs

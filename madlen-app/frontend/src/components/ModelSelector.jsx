@@ -9,6 +9,7 @@
 import { ChevronDown } from 'lucide-react';
 
 // Verified free models from OpenRouter API - prioritized by reliability
+// Removed Llama 3.1 405B due to provider errors
 const AVAILABLE_MODELS = [
     // Top picks - most reliable
     {
@@ -30,12 +31,6 @@ const AVAILABLE_MODELS = [
         context: '1M'
     },
     // Strong performers
-    {
-        id: 'meta-llama/llama-3.1-405b-instruct:free',
-        name: 'Llama 3.1 405B Instruct',
-        provider: 'Meta',
-        context: '131K'
-    },
     {
         id: 'mistralai/mistral-small-3.1-24b-instruct:free',
         name: 'Mistral Small 3.1 24B',

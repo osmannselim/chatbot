@@ -6,6 +6,7 @@ with full OpenTelemetry instrumentation for observability.
 """
 
 import uuid
+from django.db.models import Max, Min
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework import status
@@ -24,6 +25,101 @@ from .exceptions import (
     OpenRouterConnectionError,
     RateLimitError,
 )
+
+
+class SessionListAPIView(APIView):
+    """
+    API endpoint for listing chat sessions.
+    
+    GET /api/chat/sessions/
+    
+    Returns a list of all unique sessions with metadata.
+    
+    Response:
+        [
+            {
+                "session_id": "uuid-here",
+                "title": "First 30 chars of first message...",
+                "last_message_at": "2026-01-08T12:00:00Z",
+                "message_count": 10
+            },
+            ...
+        ]
+    """
+    
+    def get(self, request):
+        """Get list of all sessions ordered by most recent."""
+        
+        # Get unique session_ids with their last message timestamp
+        sessions = (
+            ChatMessage.objects
+            .values('session_id')
+            .annotate(
+                last_message_at=Max('timestamp'),
+                first_message_at=Min('timestamp')
+            )
+            .order_by('-last_message_at')
+        )
+        
+        result = []
+        for session in sessions:
+            session_id = session['session_id']
+            if not session_id:
+                continue
+                
+            # Get the first user message for title
+            first_message = (
+                ChatMessage.objects
+                .filter(session_id=session_id, role='user')
+                .order_by('timestamp')
+                .first()
+            )
+            
+            title = "New Chat"
+            if first_message:
+                title = first_message.content[:50]
+                if len(first_message.content) > 50:
+                    title += "..."
+            
+            # Get message count
+            message_count = ChatMessage.objects.filter(session_id=session_id).count()
+            
+            result.append({
+                "session_id": session_id,
+                "title": title,
+                "last_message_at": session['last_message_at'],
+                "message_count": message_count
+            })
+        
+        return Response(result)
+
+
+class ChatHistoryAPIView(APIView):
+    """
+    API endpoint for fetching chat history for a specific session.
+    
+    GET /api/chat/history/?session_id=uuid-here
+    
+    Returns all messages for the specified session.
+    """
+    
+    def get(self, request):
+        """Get chat history for a session."""
+        session_id = request.query_params.get('session_id')
+        
+        if not session_id:
+            return Response(
+                {"error": "session_id is required", "code": "VALIDATION_ERROR"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+        
+        messages = ChatMessage.objects.filter(session_id=session_id).order_by('timestamp')
+        serializer = ChatMessageSerializer(messages, many=True)
+        
+        return Response({
+            "session_id": session_id,
+            "messages": serializer.data
+        })
 
 
 class ChatAPIView(APIView):

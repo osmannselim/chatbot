@@ -24,7 +24,11 @@ A modern, local web-based chat application that serves as a gateway to AI models
 
 ## Overview
 
-Madlen Chat is a full-stack chat application that allows users to interact with various AI models through a clean, modern interface. Key features include:
+Madlen Chat is a full-stack chat application that allows users to interact with various AI models through a clean, modern interface. 
+<img width="1417" height="794" alt="image" src="https://github.com/user-attachments/assets/efd0e8c3-85bb-4dbd-8517-f905b72730b7" />
+
+
+Key features include:
 
 - **Multi-Model Support**: Connect to free AI models (Llama 3.3, Mistral, Gemini, DeepSeek, etc.)
 - **Session Management**: Create, switch, and persist chat sessions
@@ -179,6 +183,9 @@ Frontend running at: http://localhost:5173
 1. Open http://localhost:16686 in your browser
 2. Select **Service**: `chatbot-backend`
 3. Click **Find Traces**
+
+<img width="1412" height="828" alt="image" src="https://github.com/user-attachments/assets/75e28f44-9cc3-4831-a24a-a337ecbe5742" />
+
 
 ### Understanding Traces
 
